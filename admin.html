@@ -1,0 +1,15 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quản trị</title><link rel="stylesheet" href="/style.css"></head>
+<body><main class="wrap"><h1>Quản trị SHOP ACC</h1><div id="login" class="panel"><input id="u" placeholder="Username"><input id="p" type="password" placeholder="Password"><button onclick="login()">Đăng nhập</button></div>
+<div id="dash" hidden><div id="stats" class="grid"></div><section class="panel"><h2>Thêm sản phẩm</h2><input id="pn" placeholder="Tên"><input id="pg" placeholder="Game"><input id="pp" type="number" placeholder="Giá"><input id="pd" placeholder="Mô tả"><button onclick="addProduct()">Thêm</button></section>
+<section class="panel"><h2>Thêm ACC</h2><input id="pid" type="number" placeholder="Product ID"><input id="au" placeholder="Username"><input id="ap" placeholder="Password"><input id="ae" placeholder="Thông tin thêm"><button onclick="addAcc()">Thêm ACC</button></section>
+<section class="panel"><h2>Đơn hàng</h2><div id="orders"></div></section></div></main>
+<script>
+async function api(u,o){let r=await fetch(u,{headers:{"Content-Type":"application/json"},...o});let d=await r.json();if(!r.ok)throw Error(d.error||"Lỗi");return d}
+async function login(){try{await api("/api/admin/login",{method:"POST",body:JSON.stringify({username:u.value,password:p.value})});init()}catch(e){alert(e.message)}}
+async function init(){try{await api("/api/admin/me");login.hidden=true;dash.hidden=false;refresh()}catch(e){}}
+async function refresh(){stats.innerHTML=Object.entries(await api("/api/admin/stats")).map(x=>`<div class="card"><b>${x[0]}</b><h2>${x[1]}</h2></div>`).join("");orders.innerHTML=(await api("/api/admin/orders")).map(o=>`<div class="order"><b>${o.id}</b> — ${o.product_name} — ${o.amount.toLocaleString("vi-VN")}đ — ${o.status} ${o.method==="bank"&&o.status==="pending"?`<button onclick="confirmBank('${o.id}')">Xác nhận CK</button>`:""}</div>`).join("")}
+async function addProduct(){try{await api("/api/admin/products",{method:"POST",body:JSON.stringify({name:pn.value,game:pg.value,price:pp.value,description:pd.value})});alert("Đã thêm");refresh()}catch(e){alert(e.message)}}
+async function addAcc(){try{await api("/api/admin/accounts",{method:"POST",body:JSON.stringify({productId:pid.value,username:au.value,password:ap.value,extra:ae.value})});alert("Đã thêm ACC");refresh()}catch(e){alert(e.message)}}
+async function confirmBank(id){try{await api("/api/admin/orders/"+id+"/confirm-bank",{method:"POST"});alert("Đã giao ACC");refresh()}catch(e){alert(e.message)}}
+init();
+</script></body></html>
